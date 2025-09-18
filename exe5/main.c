@@ -19,11 +19,6 @@ SemaphoreHandle_t xSemaphoreLedY;
 void btn_callback(uint gpio, uint32_t events) {
     if (events == GPIO_IRQ_EDGE_FALL) {
         xQueueSendFromISR(xQueueBtn, &gpio, NULL);
-        if (gpio == BTN_PIN_R) {
-            xSemaphoreGiveFromISR(xSemaphoreLedR, NULL);
-        } else if (gpio == BTN_PIN_Y) {
-            xSemaphoreGiveFromISR(xSemaphoreLedY, NULL);
-        }
     }
 }
 
@@ -35,12 +30,14 @@ void led_task_r(void *p) {
     int gpio_id;
 
     while (true) {
-        if (xSemaphoreTake(xSemaphoreLedR, 0) == pdTRUE) {
-            if (xQueueReceive(xQueueBtn, &gpio_id, 0)) {
-                if (gpio_id == BTN_PIN_R) {
-                    state = !state;
-                }
+        if (xQueueReceive(xQueueBtn, &gpio_id, 0)) {
+            if (gpio_id == BTN_PIN_R) {
+                xSemaphoreGive(xSemaphoreLedR);
             }
+        }
+
+        if (xSemaphoreTake(xSemaphoreLedR, 0) == pdTRUE) {
+            state = !state;
         }
 
         if (state) {
@@ -63,12 +60,14 @@ void led_task_y(void *p) {
     int gpio_id;
 
     while (true) {
-        if (xSemaphoreTake(xSemaphoreLedY, 0) == pdTRUE) {
-            if (xQueueReceive(xQueueBtn, &gpio_id, 0)) {
-                if (gpio_id == BTN_PIN_Y) {
-                    state = !state;
-                }
+        if (xQueueReceive(xQueueBtn, &gpio_id, 0)) {
+            if (gpio_id == BTN_PIN_Y) {
+                xSemaphoreGive(xSemaphoreLedY);
             }
+        }
+
+        if (xSemaphoreTake(xSemaphoreLedY, 0) == pdTRUE) {
+            state = !state;
         }
 
         if (state) {
